@@ -6,7 +6,12 @@ from sqlalchemy import orm
 class Database:
     def __init__(self, database_url):
         self.engine = engine.create_engine(database_url, isolation_level="AUTOCOMMIT")
-        self.Session = orm.sessionmaker(bind=self.engine, autocommit=True, autoflush=False)
+        self.Session = orm.sessionmaker(
+            bind=self.engine,
+            class_=Session,
+            autocommit=True,
+            autoflush=False,
+        )
         # Keep track of which DBAPI connection(s) had autocommit turned off for
         # a particular transaction object.
         self.transaction_connections = {}
@@ -42,3 +47,11 @@ class Database:
 
     def get_dbapi_connection(self, connection: engine.Connection) -> extensions.connection:
         return connection.connection.connection
+
+
+class Session(orm.Session):
+    def commit(self):
+        if self.transaction is not None or not self.autocommit:
+            super().commit()
+        else:
+            self.flush()
