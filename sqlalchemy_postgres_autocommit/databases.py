@@ -4,8 +4,8 @@ from sqlalchemy import orm
 
 
 class Database:
-    def __init__(self, database_url):
-        self.engine = engine.create_engine(database_url, isolation_level="AUTOCOMMIT")
+    def __init__(self, database_url, engine_kwargs=None):
+        self.engine = engine.create_engine(database_url, isolation_level="AUTOCOMMIT", **(engine_kwargs or {}))
         self.Session = orm.sessionmaker(
             bind=self.engine,
             class_=Session,
