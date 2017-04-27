@@ -4,20 +4,25 @@ from sqlalchemy import orm
 
 
 class Database:
-    def __init__(self, database_url, engine_kwargs=None):
-        self.engine = engine.create_engine(database_url, isolation_level="AUTOCOMMIT", **(engine_kwargs or {}))
-        self.Session = orm.sessionmaker(
-            bind=self.engine,
-            class_=Session,
-            autocommit=True,
-            autoflush=False,
-        )
+    def __init__(self):
+        self.engine = None
+        self.Session = orm.sessionmaker(autocommit=True, autoflush=False, class_=Session)
         # Keep track of which DBAPI connection(s) had autocommit turned off for
         # a particular transaction object.
         self.transaction_connections = {}
 
         event.listen(self.Session, 'after_begin', self.handle_after_transaction_begin)
         event.listen(self.Session, 'after_transaction_end', self.handle_after_transaction_end)
+
+    def connect(self, database_url):
+        self.engine = engine.create_engine(database_url, isolation_level="AUTOCOMMIT")
+        self.Session.configure(bind=self.engine)
+
+    def connect_with_connection(self, database_url):
+        self.engine = engine.create_engine(database_url, isolation_level="AUTOCOMMIT")
+        connection = self.engine.connect()
+        self.Session.configure(bind=connection)
+        return connection
 
     def handle_after_transaction_begin(self, session, transaction, connection):
         if self.should_disable_autocommit(transaction, connection):

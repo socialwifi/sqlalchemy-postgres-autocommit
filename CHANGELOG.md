@@ -1,10 +1,10 @@
 Changelog for sqlalchemy-postgres-autocommit
 =================
 
-0.1.1 (unreleased)
+0.2.0 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Setup database connection in separate call.
 
 
 0.1.0 (2017-04-27)
