@@ -6,7 +6,7 @@ from setuptools import find_packages
 setup(
     name='sqlalchemy-postgres-autocommit',
     version='0.1.0',
-    description='A library to use SQLAlchemy with PostgreSQL in autocommit mode.',
+    description='A library to use SQLAlchemy with PostgreSQL in an autocommit mode.',
     author='Jakub Gocławski',
     author_email='it@socialwifi.com',
     url='https://github.com/socialwifi/sqlalchemy-postgres-autocommit',
