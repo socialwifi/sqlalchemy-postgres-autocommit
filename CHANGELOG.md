@@ -1,7 +1,7 @@
 Changelog for sqlalchemy-postgres-autocommit
 =================
 
-0.2.1 (unreleased)
+0.2.1 (2017-08-23)
 ------------------
 
 - Restore passing additional kwargs to create engine.
