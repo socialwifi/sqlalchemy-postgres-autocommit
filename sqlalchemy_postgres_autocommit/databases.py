@@ -14,12 +14,12 @@ class Database:
         event.listen(self.Session, 'after_begin', self.handle_after_transaction_begin)
         event.listen(self.Session, 'after_transaction_end', self.handle_after_transaction_end)
 
-    def connect(self, database_url):
-        self.engine = engine.create_engine(database_url, isolation_level="AUTOCOMMIT")
+    def connect(self, database_url, **kwargs):
+        self.engine = engine.create_engine(database_url, isolation_level="AUTOCOMMIT", **kwargs)
         self.Session.configure(bind=self.engine)
 
-    def connect_with_connection(self, database_url):
-        self.engine = engine.create_engine(database_url, isolation_level="AUTOCOMMIT")
+    def connect_with_connection(self, database_url, **kwargs):
+        self.engine = engine.create_engine(database_url, isolation_level="AUTOCOMMIT", **kwargs)
         connection = self.engine.connect()
         self.Session.configure(bind=connection)
         return connection
