@@ -1,12 +1,12 @@
 from psycopg2 import extensions
 from sqlalchemy import engine, event
-from sqlalchemy import orm
+from sqlalchemy.orm import session as sqla_session
 
 
 class Database:
     def __init__(self):
         self.engine = None
-        self.Session = orm.sessionmaker(autocommit=True, autoflush=False, class_=Session)
+        self.Session = sqla_session.sessionmaker(autocommit=True, autoflush=False, class_=Session)
         # Keep track of which DBAPI connection(s) had autocommit turned off for
         # a particular transaction object.
         self.transaction_connections = {}
@@ -54,9 +54,28 @@ class Database:
         return connection.connection.connection
 
 
-class Session(orm.Session):
+class Session(sqla_session.Session):
     def commit(self):
-        if self.transaction is not None or not self.autocommit:
+        if self._in_transaction or not self.autocommit:
             super().commit()
         else:
             self.flush()
+
+    def begin(self, *args, nested=False, **kwargs):
+        if self._transaction_opened_externally():
+            self.transaction = sqla_session.SessionTransaction(self)
+            return super().begin(*args, nested=True, **kwargs)
+        else:
+            return super().begin(*args, nested=nested, **kwargs)
+
+    def _transaction_opened_externally(self):
+        return not self._in_transaction and not self._connection_autocommit_enabled
+
+    @property
+    def _in_transaction(self):
+        return self.transaction is not None
+
+    @property
+    def _connection_autocommit_enabled(self):
+        dbapi_connection = self.connection().connection.connection
+        return dbapi_connection.autocommit
