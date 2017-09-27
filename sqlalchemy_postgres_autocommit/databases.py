@@ -1,12 +1,12 @@
 from psycopg2 import extensions
 from sqlalchemy import engine, event
-from sqlalchemy import orm
+from sqlalchemy.orm import session as sqla_session
 
 
 class Database:
     def __init__(self):
         self.engine = None
-        self.Session = orm.sessionmaker(autocommit=True, autoflush=False, class_=Session)
+        self.Session = sqla_session.sessionmaker(autocommit=True, autoflush=False, class_=Session)
         # Keep track of which DBAPI connection(s) had autocommit turned off for
         # a particular transaction object.
         self.transaction_connections = {}
@@ -40,6 +40,7 @@ class Database:
     def handle_after_transaction_end(self, session, transaction):
         if self.should_reenable_autocommit(transaction):
             self.reenable_autocommit(transaction)
+        session.revert_faked_transaction_if_needed()
 
     def should_reenable_autocommit(self, transaction):
         return transaction in self.transaction_connections
@@ -54,9 +55,38 @@ class Database:
         return connection.connection.connection
 
 
-class Session(orm.Session):
+class Session(sqla_session.Session):
+    def __init__(self, *args, fake_root_transaction=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fake_root_transaction = fake_root_transaction
+
     def commit(self):
-        if self.transaction is not None or not self.autocommit:
+        if self._in_transaction or not self.autocommit:
             super().commit()
         else:
             self.flush()
+
+    def begin(self, *args, nested=False, **kwargs):
+        if self._should_fake_transaction():
+            self._create_faked_root_transaction()
+            return super().begin(*args, nested=True, **kwargs)
+        else:
+            return super().begin(*args, nested=nested, **kwargs)
+
+    def _should_fake_transaction(self):
+        return self.fake_root_transaction and not self._in_transaction
+
+    def _create_faked_root_transaction(self):
+        self.transaction = sqla_session.SessionTransaction(self)
+
+    def revert_faked_transaction_if_needed(self):
+        if self.fake_root_transaction and self._has_only_root_transaction:
+            self.transaction = None
+
+    @property
+    def _has_only_root_transaction(self):
+        return self._in_transaction and self.transaction.parent is None
+
+    @property
+    def _in_transaction(self):
+        return self.transaction is not None

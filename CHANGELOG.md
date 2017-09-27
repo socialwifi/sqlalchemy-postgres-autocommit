@@ -4,7 +4,7 @@ Changelog for sqlalchemy-postgres-autocommit
 0.2.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Make explicit transactions work during tests, by producing savepoints.
 
 
 0.2.1 (2017-08-23)
