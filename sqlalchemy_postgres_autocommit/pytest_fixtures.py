@@ -24,3 +24,23 @@ def db_session(autocommit_database, db_connection):
     session = autocommit_database.session_factory(bind=db_connection)
     yield session
     session.close()
+
+
+@pytest.fixture(scope="session")
+def test_database_url():
+    _raise_not_configured_error()
+
+
+@pytest.fixture(scope="session")
+def autocommit_database():
+    _raise_not_configured_error()
+
+
+@pytest.fixture(scope="session")
+def sqlalchemy_session():
+    _raise_not_configured_error()
+
+
+def _raise_not_configured_error():
+    raise NotImplementedError('Please implement this fixture in your code to configure the plugin. '
+                              'More details in the README.')
