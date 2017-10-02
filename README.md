@@ -113,30 +113,86 @@ A typical approach to testing with a database is to run each test case in a
 transaction and rollback that transaction when the test ends. That way SQL 
 operations are executed in the database, but never committed between tests.
 
-An example of a pytest fixture:
-
-```python
-import pytest
-
-@pytest.fixture
-def db_connection():
-    from my_app import db
-    
-    db.database.configure_engine('postgresql://postgres@localhost:5432/test')
-    connection = db.database.create_connection_with_bound_session()
-    transaction = connection.begin()
-    db.database.disable_autocommit(transaction, connection)
-    db.db_session.configure(bind=connection, fake_root_transaction=True)
-    yield connection
-    db.db_session.remove()
-    transaction.rollback()
-    db.database.reenable_autocommit(transaction)
-
-```
-
 When the code that is being tested uses an explicit transaction, here's what happens:
 * in production: first `begin()` opens a new transaction
 * in test: first `begin()` starts a savepoint, because each test already runs in a transaction
+
+### pytest fixtures
+
+This package can be used as a pytest plugin and it provides fixtures for running tests 
+in transactions.
+
+The plugin provides the following fixtures:
+* **transactional_connection** - Creates connection with an open transaction and configures the 
+global session to use this connection. Any changes made to the database via
+the global session will be rolled back when the test function ends. 
+Uses the [Joining a Session into an External Transaction](http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#joining-a-session-into-an-external-transaction-such-as-for-test-suites) pattern from SQLAlchemy documentation.
+Fixture scope: "function".
+* **session** - Creates a fresh session bound to the *db_connection* declared above.
+Any queries to the database in the test function, should be issued via this session - NOT via
+the global session. This ensures that the test observes changes in the database, instead of
+observing potentially uncommitted changes made on the global session.
+Fixture scope: "function".
+* **configured_connection** - a helper fixture (session-scoped) that is used by the above fixtures. 
+It opens only one connection and reuses it.
+
+For those fixtures to work, you need to configure the plugin. Configuration is done
+by using fixture factories:
+* `configured_connection_factory`
+* `transactional_connection_factory`
+* `session_factory`
+
+Parameters:
+* **autocommit_database** - the 
+`sqlalchemy_postgres_autocommit.AutocommitDatabase` object used by the application. 
+* **test_database_url** - a string with connection URL to the test database. 
+* **sqlalchemy_session** - the global Session used by the application.
+* **configured_connection_fixture_name** - name of the fixture created by `configured_connection_factory`
+* **transactional_connection_fixture_name** - name of the fixture created by `transactional_connection_factory`
+
+#### Configuration example
+conftest.py:
+```python
+from sqlalchemy_postgres_autocommit.pytest import factories
+
+from myapp import db
+
+
+db_configured_connection = factories.configured_connection_factory(
+    autocommit_database=db.database,
+    test_database_url='postgresql://postgres@localhost:5432/test',
+)
+db_connection = factories.transactional_connection_factory(
+    autocommit_database=db.database,
+    sqlalchemy_session=db.session,
+    configured_connection_fixture_name='db_configured_connection',
+)
+db_session = factories.session_factory(
+    autocommit_database=db.database,
+    db_connection_fixture_name='db_connection',
+)
+```
+
+#### Usage example
+Now, let's say we want to write two kinds of tests:
+1. One that tests code that uses the database, but the test code itself doesn't 
+touch the database. An example of such test is invoking a function and observing 
+the results with another function.
+1. Another one that makes assertions on the database - it needs a separate session for querying.
+
+```python
+@pytest.mark.usefixtures("db_connection")
+def test_1():
+    my_app.create_user(username="frank")
+    found_users = my_app.get_users()
+    assert len(found_users) == 1
+    
+
+def test_2(db_session):
+    my_app.create_user(username="frank")
+    found_users = db_session.query(models.User).all()
+    assert len(found_users) == 1
+```
 
 ### Testing and `IntegrityError`
 

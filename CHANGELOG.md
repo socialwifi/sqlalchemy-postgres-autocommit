@@ -4,7 +4,8 @@ Changelog for sqlalchemy-postgres-autocommit
 0.3.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Add pytest fixtures for running tests in transactions.
+- Refactor names (module API change).
 
 
 0.3.0 (2017-10-03)
