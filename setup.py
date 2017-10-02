@@ -14,6 +14,11 @@ setup(
     install_requires=[str(ir.req) for ir in parse_requirements('base_requirements.txt', session=False)],
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
+    entry_points = {
+        'pytest11': [
+            'sqlalchemy_postgres_autocommit = sqlalchemy_postgres_autocommit.pytest_fixtures',
+        ]
+    },
     license='BSD',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
