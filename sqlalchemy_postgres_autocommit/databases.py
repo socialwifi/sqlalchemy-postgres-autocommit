@@ -14,12 +14,14 @@ class AutocommitDatabase:
         event.listen(self.session_factory, 'after_begin', self._handle_after_transaction_begin)
         event.listen(self.session_factory, 'after_transaction_end', self._handle_after_transaction_end)
 
-    def connect(self, database_url, **kwargs):
-        self.engine = engine.create_engine(database_url, isolation_level="AUTOCOMMIT", **kwargs)
+    def configure(self, database_url, **kwargs):
+        self.configure_engine(database_url, **kwargs)
         self.session_factory.configure(bind=self.engine)
 
-    def connect_with_connection(self, database_url, **kwargs):
+    def configure_engine(self, database_url, **kwargs):
         self.engine = engine.create_engine(database_url, isolation_level="AUTOCOMMIT", **kwargs)
+
+    def create_connection_with_bound_session(self):
         connection = self.engine.connect()
         self.session_factory.configure(bind=connection)
         return connection

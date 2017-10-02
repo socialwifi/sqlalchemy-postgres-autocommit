@@ -32,7 +32,7 @@ Base = sqlalchemy.ext.declarative.declarative_base()
 Base.query = session.query_property()
 
 def setup():
-    database.connect('postgresql://postgres@localhost:5432/myapp')
+    database.configure('postgresql://postgres@localhost:5432/myapp')
 
 ```
 
@@ -122,7 +122,8 @@ import pytest
 def db_connection():
     from my_app import db
     
-    connection = db.database.connect_with_connection('postgresql://postgres@localhost:5432/test')
+    db.database.configure_engine('postgresql://postgres@localhost:5432/test')
+    connection = db.database.create_connection_with_bound_session()
     transaction = connection.begin()
     db.database.disable_autocommit(transaction, connection)
     db.db_session.configure(bind=connection, fake_root_transaction=True)
