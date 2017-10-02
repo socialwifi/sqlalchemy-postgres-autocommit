@@ -1,5 +1,5 @@
-from sqlalchemy_postgres_autocommit.databases import Database
+from sqlalchemy_postgres_autocommit.databases import AutocommitDatabase
 
 __all__ = [
-    Database,
+    AutocommitDatabase,
 ]

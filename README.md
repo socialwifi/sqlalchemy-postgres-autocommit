@@ -23,13 +23,13 @@ An example `myapp/db.py` file with database configuration may look like this:
 ```python
 import sqlalchemy.ext.declarative
 import sqlalchemy.orm
-from sqlalchemy_postgres_autocommit import databases
+import sqlalchemy_postgres_autocommit
 
 
-database = databases.Database()
-session = sqlalchemy.orm.scoped_session(database.Session)
+database = sqlalchemy_postgres_autocommit.AutocommitDatabase()
+session = sqlalchemy.orm.scoped_session(database.session_factory)
 Base = sqlalchemy.ext.declarative.declarative_base()
-Base.query = db_session.query_property()
+Base.query = session.query_property()
 
 def setup():
     database.connect('postgresql://postgres@localhost:5432/myapp')
