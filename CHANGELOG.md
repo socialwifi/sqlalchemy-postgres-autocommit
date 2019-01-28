@@ -1,6 +1,12 @@
 Changelog for sqlalchemy-postgres-autocommit
 =================
 
+0.4.2 (unreleased)
+------------------
+
+- Nothing changed yet.
+
+
 0.4.1 (2019-01-28)
 ------------------
 
