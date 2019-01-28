@@ -49,8 +49,9 @@ class AutocommitDatabase:
 
     def reenable_autocommit(self, transaction):
         for dbapi_connection in self._transaction_connections[transaction]:
-            assert not dbapi_connection.autocommit
-            dbapi_connection.autocommit = True
+            if not dbapi_connection.closed:
+                assert not dbapi_connection.autocommit
+                dbapi_connection.autocommit = True
         del self._transaction_connections[transaction]
 
     def _get_dbapi_connection(self, connection: engine.Connection) -> extensions.connection:
