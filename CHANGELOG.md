@@ -1,7 +1,7 @@
 Changelog for sqlalchemy-postgres-autocommit
 =================
 
-0.4.1 (unreleased)
+0.4.1 (2019-01-28)
 ------------------
 
 - Do not re-enable autocommit for closed connections.
