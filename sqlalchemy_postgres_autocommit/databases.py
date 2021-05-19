@@ -61,6 +61,7 @@ class AutocommitDatabase:
 class Session(sqla_session.Session):
     def __init__(self, *args, fake_root_transaction=False, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fake_transaction = None
         self.fake_root_transaction = fake_root_transaction
 
     def commit(self):
@@ -80,16 +81,16 @@ class Session(sqla_session.Session):
         return self.fake_root_transaction and not self._in_transaction
 
     def _create_faked_root_transaction(self):
-        self.transaction = sqla_session.SessionTransaction(self)
+        self.fake_transaction = sqla_session.SessionTransaction(self)
 
     def revert_faked_transaction_if_needed(self):
         if self.fake_root_transaction and self._has_only_root_transaction:
-            self.transaction = None
+            self.fake_transaction = None
 
     @property
     def _has_only_root_transaction(self):
-        return self._in_transaction and self.transaction.parent is None
+        return self._in_transaction and self.fake_transaction.parent is None
 
     @property
     def _in_transaction(self):
-        return self.transaction is not None
+        return self.fake_transaction is not None
