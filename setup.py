@@ -1,9 +1,14 @@
-try:  # for pip >= 10
-    from pip._internal.req import parse_requirements
-except ImportError:  # for pip <= 9.0.3
-    from pip.req import parse_requirements
-from setuptools import setup
+import pathlib
+
+import pkg_resources
+
 from setuptools import find_packages
+from setuptools import setup
+
+with pathlib.Path('base_requirements.txt').open() as requirements_txt:
+    install_requires = [
+        str(requirement) for requirement in pkg_resources.parse_requirements(requirements_txt)
+    ]
 
 
 setup(
@@ -14,7 +19,7 @@ setup(
     author_email='it@socialwifi.com',
     url='https://github.com/socialwifi/sqlalchemy-postgres-autocommit',
     packages=find_packages(exclude=['tests']),
-    install_requires=[str(ir.req) for ir in parse_requirements('base_requirements.txt', session=False)],
+    install_requires=install_requires,
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     license='BSD',
